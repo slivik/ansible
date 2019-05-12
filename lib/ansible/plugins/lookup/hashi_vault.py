@@ -20,6 +20,9 @@ DOCUMENTATION = """
     secret:
       description: query you are making.
       required: True
+    kv_version:
+      description: KV secrets engine version
+      default: 'v1'
     token:
       description: vault token.
       env:
@@ -131,6 +134,7 @@ class HashiVault:
 
         self.url = kwargs.get('url', ANSIBLE_HASHI_VAULT_ADDR)
         self.namespace = kwargs.get('namespace', None)
+        self.kv_version = kwargs.get('kv_version', 'v1')
         self.avail_auth_method = ['approle', 'userpass', 'ldap']
 
         # split secret arg, which has format 'secret/hello:value' into secret='secret/hello' and secret_field='value'
@@ -193,6 +197,10 @@ class HashiVault:
 
         if data is None:
             raise AnsibleError("The secret %s doesn't seem to exist for hashi_vault lookup" % self.secret)
+
+        # data structure is a bit different for KV version 2 - see Vault API docs
+        if self.kv_version == 'v2':
+            data = data['data']
 
         if self.secret_field == '':
             return data['data']
